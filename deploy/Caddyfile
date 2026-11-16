@@ -1,0 +1,12 @@
+# 将 json.example.com 替换为您的实际域名，Caddy 会自动申请并续期 HTTPS 证书
+json.example.com {
+    root * /var/www/jsonlens
+    encode zstd gzip
+    file_server
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "no-referrer"
+    }
+}

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JSONLens — 现代在线 JSON 解析、可视化图谱与类型转换工作台</title>
+  <meta name="description" content="100% 本地浏览器解析的现代 JSON 工作台：支持语法高亮、智能容错修复、JSON Crack 风格可视化图谱、JSONPath 查询、JWT/时间戳透视、语义 Diff 对比及 TS/Go/Python/Java/Rust 代码生成。" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="stylesheet" href="./css/variables.css" />
+  <link rel="stylesheet" href="./css/layout.css" />
+  <link rel="stylesheet" href="./css/views.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 1. Top Header Bar -->
+    <header class="top-header">
+      <div class="brand-group">
+        <img src="./favicon.svg" alt="JSONLens" class="brand-logo" />
+        <span class="brand-name">JSONLens</span>
+        <span class="privacy-badge" title="所有 JSON 解析与转换均在您的浏览器本地内存中完成，绝不向任何服务器发送数据">
+          <span class="privacy-dot"></span>
+          100% 本地解析 · 隐私安全
+        </span>
+      </div>
+
+      <!-- Multi-Document Tabs -->
+      <div class="tabs-strip">
+        <div id="tabs-list" class="tabs-list"></div>
+        <button id="btn-new-tab" type="button" class="tab-add-btn" title="新建标签页">+</button>
+      </div>
+
+      <!-- Right Global Controls -->
+      <div class="header-right">
+        <div class="dropdown-wrap">
+          <button type="button" class="btn-tool" data-dropdown-trigger="samples-menu">
+            <span>示例数据</span>
+            <span>▾</span>
+          </button>
+          <div id="samples-menu" class="dropdown-menu align-right"></div>
+        </div>
+
+        <button id="btn-import-file" type="button" class="btn-tool" title="导入本地 .json / .log 文件（支持直接拖拽文件到窗口）">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>导入</span>
+        </button>
+        <input id="file-input" type="file" accept=".json,.txt,.log,.jsonl,.ndjson,application/json" class="hidden" />
+
+        <button id="btn-download-json" type="button" class="btn-tool" title="下载当前标签页 JSON 文件">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>保存</span>
+        </button>
+
+        <button id="btn-cmd-palette" type="button" class="btn-tool" title="打开命令面板 (⌘K / Ctrl+K)">
+          <span>命令</span>
+          <kbd class="cmd-kbd">⌘K</kbd>
+        </button>
+
+        <button id="btn-theme-toggle" type="button" class="btn-tool" title="切换深色 / 浅色外观">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+
+        <button id="btn-help-modal" type="button" class="btn-tool" title="查看快捷键与功能指南">?</button>
+      </div>
+    </header>
+
+    <!-- 2. Action Toolbar -->
+    <div class="action-toolbar">
+      <div class="toolbar-left">
+        <button id="btn-format" type="button" class="btn-tool btn-primary" title="格式化美化 JSON (⌘/Ctrl + Enter)">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+          <span>格式化</span>
+        </button>
+
+        <select id="indent-select" class="select-sm" aria-label="缩进宽度">
+          <option value="2" selected>2 空格</option>
+          <option value="4">4 空格</option>
+          <option value="tab">Tab 缩进</option>
+        </select>
+
+        <button id="btn-minify" type="button" class="btn-tool" title="压缩为单行紧凑 JSON">压缩</button>
+
+        <button id="btn-repair" type="button" class="btn-tool btn-repair" title="自动清除注释、单引号转双引号、补全键名引号、清除尾随逗号、转换 Python True/None 及合并多行日志">
+          <span>✨ 智能修复</span>
+        </button>
+
+        <div class="dropdown-wrap">
+          <button type="button" class="btn-tool" data-dropdown-trigger="transform-menu">
+            <span>转换增强 ▾</span>
+          </button>
+          <div id="transform-menu" class="dropdown-menu">
+            <button type="button" class="dropdown-item" data-transform="unpack-nested">
+              <span class="dd-item-title">⚡ 递归解包内嵌 JSON 字符串</span>
+              <span class="dd-item-sub">自动将值为 JSON 字符串的字段展开为真实对象</span>
+            </button>
+            <button type="button" class="dropdown-item" data-transform="unescape">
+              <span class="dd-item-title">🔓 字符串去转义 (Unescape)</span>
+              <span class="dd-item-sub">将 \"name\":\"val\" 还原为标准 JSON</span>
+            </button>
+            <button type="button" class="dropdown-item" data-transform="escape">
+              <span class="dd-item-title">🔒 转义为字符串 (Escape)</span>
+              <span class="dd-item-sub">将 JSON 序列化为带转义引号的字符串</span>
+            </button>
+            <button type="button" class="dropdown-item" data-transform="sort-asc">
+              <span class="dd-item-title">🔤 键名升序排列 (A → Z)</span>
+              <span class="dd-item-sub">递归按字母顺序排列所有对象键名</span>
+            </button>
+            <button type="button" class="dropdown-item" data-transform="sort-desc">
+              <span class="dd-item-title">🔤 键名降序排列 (Z → A)</span>
+              <span class="dd-item-sub">递归按字母逆序排列所有对象键名</span>
+            </button>
+          </div>
+        </div>
+
+        <span class="divider-v"></span>
+
+        <button id="btn-search-editor" type="button" class="btn-tool" title="在编辑器中查找 (⌘/Ctrl + F)">查找</button>
+        <button id="btn-copy-editor" type="button" class="btn-tool" title="复制左侧编辑器全部内容">复制</button>
+        <button id="btn-clear-editor" type="button" class="btn-tool" title="清空当前内容">清空</button>
+      </div>
+
+      <div class="toolbar-right">
+        <button id="btn-toggle-left" type="button" class="btn-tool" title="隐藏或显示左侧代码编辑器">专注视图</button>
+
+        <div id="view-switcher" class="segmented-switcher" role="tablist" aria-label="右侧分析视图模式">
+          <button type="button" class="seg-btn is-active" data-view="tree">🌲 树形透视</button>
+          <button type="button" class="seg-btn" data-view="graph">🕸️ 图谱视图</button>
+          <button type="button" class="seg-btn" data-view="table">📊 表格分析</button>
+          <button type="button" class="seg-btn" data-view="codegen">⚡ 类型转换</button>
+          <button type="button" class="seg-btn" data-view="diff">🔀 差异对比</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Split Main Workbench -->
+    <main id="workbench" class="workbench">
+      <!-- Left Code Editor Pane -->
+      <section id="left-pane" class="left-pane" aria-label="JSON 源码编辑区">
+        <div id="editor-mount" class="editor-host"></div>
+
+        <!-- Escaped JSON Hint Banner -->
+        <div id="escaped-banner" class="diag-banner is-info hidden">
+          <div class="diag-text">检测到当前内容是<strong>被引号转义包裹的 JSON 字符串</strong>，是否立即解包为可交互对象？</div>
+          <div class="diag-actions">
+            <button id="btn-unescape-banner" type="button" class="btn-xs btn-primary-xs">立即解包并格式化</button>
+          </div>
+        </div>
+
+        <!-- Syntax Error Diagnostic Banner -->
+        <div id="error-banner" class="diag-banner is-error hidden">
+          <div class="diag-text">
+            <span id="err-loc-text" class="diag-loc">第 1 行，第 1 列</span>
+            <span id="err-reason-text">JSON 语法错误</span>
+          </div>
+          <div class="diag-actions">
+            <button id="btn-err-locate" type="button" class="btn-xs">定位行</button>
+            <button id="btn-err-repair" type="button" class="btn-xs btn-primary-xs">✨ 一键智能修复</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Draggable Divider -->
+      <div id="split-resizer" class="split-resizer" title="左右拖动调整分栏比例"></div>
+
+      <!-- Right Interactive Visualizer Pane -->
+      <section class="right-pane" aria-label="JSON 可视化与转换区">
+        <div id="view-tree" class="right-view-pane is-active"></div>
+        <div id="view-graph" class="right-view-pane"></div>
+        <div id="view-table" class="right-view-pane"></div>
+        <div id="view-codegen" class="right-view-pane"></div>
+        <div id="view-diff" class="right-view-pane"></div>
+      </section>
+    </main>
+
+    <!-- 4. Bottom Status Bar -->
+    <footer class="status-bar">
+      <div class="status-left">
+        <span id="status-valid" class="status-pill is-ok">● JSON 语法有效</span>
+        <span id="status-path" class="status-path" title="当前选中节点的 JSONPath，点击即可复制">$</span>
+      </div>
+      <div class="status-right">
+        <span id="status-cursor">行 1, 列 1</span>
+        <span id="status-metrics">0 B · 0 行</span>
+        <span>UTF-8</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Command Palette Modal (Cmd/Ctrl + K) -->
+  <div id="cmd-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="命令面板">
+    <div class="cmd-dialog">
+      <div class="cmd-input-wrap">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="cmd-input" type="text" class="cmd-input" placeholder="输入动作名称，如：格式化、图谱、TypeScript、Go、修复、排序..." autocomplete="off" spellcheck="false" />
+        <kbd class="cmd-kbd">ESC</kbd>
+      </div>
+      <div id="cmd-list" class="cmd-list"></div>
+    </div>
+  </div>
+
+  <!-- Shortcuts & Feature Guide Modal -->
+  <div id="help-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="快捷键与功能说明">
+    <div class="help-dialog">
+      <div class="help-head">
+        <h3>快捷键与高阶功能指南</h3>
+        <button id="btn-close-help" type="button" class="icon-btn-xs">✕</button>
+      </div>
+      <div class="shortcut-grid">
+        <span>唤起全局命令面板</span><kbd class="cmd-kbd">⌘ / Ctrl + K</kbd>
+        <span>格式化当前 JSON</span><kbd class="cmd-kbd">⌘ / Ctrl + Enter</kbd>
+        <span>在代码编辑器内查找文本</span><kbd class="cmd-kbd">⌘ / Ctrl + F</kbd>
+        <span>代码块缩进 / 反向缩进</span><kbd class="cmd-kbd">Tab / Shift + Tab</kbd>
+        <span>重命名多文档标签页</span><kbd class="cmd-kbd">双击顶部标签</kbd>
+        <span>导入本地文件</span><kbd class="cmd-kbd">直接拖拽文件至窗口</kbd>
+        <span>JSONPath 高级过滤示例</span><kbd class="cmd-kbd">$.orders[?(@.paid==true)]</kbd>
+        <span>JSONPath 递归检索所有同名键</span><kbd class="cmd-kbd">$..amount</kbd>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full-Window File Drag & Drop Overlay -->
+  <div id="drop-overlay" class="drop-overlay hidden">
+    <div class="drop-card">
+      <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <h3>松开鼠标导入文件</h3>
+      <p>将在新标签页中本地打开，数据不会上传服务器</p>
+    </div>
+  </div>
+
+  <!-- Toast Host -->
+  <div id="toast-host" class="toast-host" aria-live="polite"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

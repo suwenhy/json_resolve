@@ -1,0 +1,9 @@
+services:
+  jsonlens:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jsonlens
+    ports:
+      - "8080:80"
+    restart: unless-stopped
