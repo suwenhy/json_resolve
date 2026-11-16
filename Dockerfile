@@ -1,4 +1,5 @@
-FROM nginx:1.27-alpine
+ARG BASE_IMAGE=nginx:1.27-alpine
+FROM ${BASE_IMAGE}
 
 LABEL maintainer="JSONLens"
 LABEL description="Self-hosted zero-dependency modern JSON parser & visualizer workbench"

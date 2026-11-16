@@ -34,19 +34,46 @@
 
 ## 服务器部署指南
 
-### 方式一：Docker Compose 一键部署（推荐）
+### 方式一：一键 Docker 脚本打包部署（强烈推荐）
 
-在您的服务器上进入项目目录后执行：
+仓库内置了自动化运维脚本 [`deploy.sh`](./deploy.sh)，支持**端口冲突预检、国内服务器基础镜像自动加速回退、自动拉取最新 Git 代码、平滑替换旧容器与日志轮转限额**。默认监听 **`9680`** 端口（避免与常见的 `8080` 应用冲突）：
 
 ```bash
-docker compose up -d --build
+git clone https://github.com/suwenhy/json_resolve.git
+cd json_resolve
+
+# 1. 默认使用 9680 端口一键打包并后台启动
+./deploy.sh
+
+# 2. 如需自定义端口（例如 18880）
+./deploy.sh -p 18880
+
+# 3. 如配合宿主机 Nginx / 宝塔反代，可仅监听本机回环地址
+./deploy.sh -b 127.0.0.1 -p 9680
 ```
 
-启动后访问 `http://您的服务器IP:8080` 即可使用。如需绑定域名与 HTTPS，用宿主机 Nginx / Caddy 反向代理 `127.0.0.1:8080` 即可。
+日常运维管理命令：
+```bash
+./deploy.sh status      # 查看运行状态与端口映射
+./deploy.sh logs        # 查看实时访问日志
+./deploy.sh             # 拉取最新 GitHub 代码并重新打包更新
+./deploy.sh uninstall   # 停止并卸载容器与镜像
+```
 
 ---
 
-### 方式二：Nginx / 宝塔面板直接静态托管（最轻量）
+### 方式二：Docker Compose 部署
+
+```bash
+# 默认映射 9680 端口；也可通过 PORT=18880 docker compose up -d --build 指定端口
+docker compose up -d --build
+```
+
+启动后访问 `http://您的服务器IP:9680` 即可使用。如需绑定域名与 HTTPS，用宿主机 Nginx / Caddy 反向代理 `127.0.0.1:9680` 即可。
+
+---
+
+### 方式三：Nginx / 宝塔面板直接静态托管（免容器）
 
 本项目采用纯静态相对路径设计，**既支持独立域名根目录，也支持二级子路径（如 `https://yourdomain.com/json/`）**，无需任何编译步骤：
 
@@ -77,7 +104,7 @@ docker compose up -d --build
 
 ---
 
-### 方式三：Caddy 自动签发 HTTPS
+### 方式四：Caddy 自动签发 HTTPS
 
 参考 `deploy/Caddyfile`，修改域名后执行 `caddy reload` 即可自动完成 Let's Encrypt SSL 证书申请与 HTTP/3 加速。
 

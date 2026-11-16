@@ -3,7 +3,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-nginx:1.27-alpine}
+    image: jsonlens:latest
     container_name: jsonlens
     ports:
-      - "8080:80"
+      - "${PORT:-9680}:80"
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
