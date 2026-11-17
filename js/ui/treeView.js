@@ -26,6 +26,8 @@ export class JsonTreeView {
     this.queryText = '';
     this.filterOnlyMatches = false;
     this.inspectorOpen = true;
+    this.matchElements = [];
+    this.matchIndex = -1;
 
     this._renderShell();
     this._bindEvents();
@@ -42,10 +44,13 @@ export class JsonTreeView {
             type="text"
             class="tree-search-input"
             data-role="query-input"
-            placeholder="搜索键/值，或输入 JSONPath 如 $.orders[?(@.paid==true)] 、$..amount"
+            placeholder="搜索键/值，或 JSONPath 如 $..amount (Enter 跳转)"
             autocomplete="off"
             spellcheck="false"
           />
+          <span class="tree-match-count hidden" data-role="match-count">0 / 0</span>
+          <button type="button" class="icon-btn-xs hidden" data-role="match-prev" title="上一个匹配项 (Shift+Enter)">↑</button>
+          <button type="button" class="icon-btn-xs hidden" data-role="match-next" title="下一个匹配项 (Enter)">↓</button>
           <button type="button" class="icon-btn-xs hidden" data-role="query-clear" title="清除查询">✕</button>
         </div>
         <div class="tree-actions">
@@ -82,6 +87,9 @@ export class JsonTreeView {
     `;
 
     this.queryInput = this.container.querySelector('[data-role="query-input"]');
+    this.matchCountEl = this.container.querySelector('[data-role="match-count"]');
+    this.matchPrevBtn = this.container.querySelector('[data-role="match-prev"]');
+    this.matchNextBtn = this.container.querySelector('[data-role="match-next"]');
     this.queryClearBtn = this.container.querySelector('[data-role="query-clear"]');
     this.filterOnlyCheckbox = this.container.querySelector('[data-role="filter-only"]');
     this.treeScroll = this.container.querySelector('[data-role="tree-scroll"]');
@@ -97,14 +105,30 @@ export class JsonTreeView {
       this.queryText = this.queryInput.value.trim();
       this.queryClearBtn.classList.toggle('hidden', !this.queryText);
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => this.renderTree(), 90);
+      debounceTimer = setTimeout(() => this.renderTree(true), 90);
     });
+
+    this.queryInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.stepMatch(e.shiftKey ? -1 : 1);
+      } else if (e.key === 'Escape' && this.queryText) {
+        e.preventDefault();
+        this.queryInput.value = '';
+        this.queryText = '';
+        this.queryClearBtn.classList.add('hidden');
+        this.renderTree(false);
+      }
+    });
+
+    this.matchPrevBtn.addEventListener('click', () => this.stepMatch(-1));
+    this.matchNextBtn.addEventListener('click', () => this.stepMatch(1));
 
     this.queryClearBtn.addEventListener('click', () => {
       this.queryInput.value = '';
       this.queryText = '';
       this.queryClearBtn.classList.add('hidden');
-      this.renderTree();
+      this.renderTree(false);
     });
 
     this.filterOnlyCheckbox.addEventListener('change', () => {
@@ -281,9 +305,10 @@ export class JsonTreeView {
     this.onSelectPath(info);
   }
 
-  renderTree() {
+  renderTree(jumpToFirst = false) {
     if (this.data === undefined) {
       this.treeScroll.innerHTML = `<div class="empty-view">暂无可渲染的 JSON 数据</div>`;
+      this._refreshSearchNavigation(false);
       return;
     }
 
@@ -294,6 +319,7 @@ export class JsonTreeView {
 
     if (isJsonPathMode) {
       this._renderJsonPathResults(this.queryText);
+      this._refreshSearchNavigation(jumpToFirst);
       return;
     }
 
@@ -307,6 +333,68 @@ export class JsonTreeView {
       this.treeScroll.innerHTML = `<div class="empty-view">没有找到与 <code>${escapeHtml(this.queryText)}</code> 匹配的节点</div>`;
     } else {
       this.treeScroll.innerHTML = `<div class="tree-root">${htmlChunks.join('')}</div>`;
+    }
+    this._refreshSearchNavigation(jumpToFirst);
+  }
+
+  _refreshSearchNavigation(jumpToFirst = false) {
+    const hasQuery = Boolean(this.queryText);
+    if (!hasQuery) {
+      this.matchElements = [];
+      this.matchIndex = -1;
+      this.matchCountEl.classList.add('hidden');
+      this.matchPrevBtn.classList.add('hidden');
+      this.matchNextBtn.classList.add('hidden');
+      return;
+    }
+
+    const rowHits = [...this.treeScroll.querySelectorAll('.tree-row')].filter((row) =>
+      row.querySelector('.search-mark')
+    );
+    const jpHits = [...this.treeScroll.querySelectorAll('.jp-result-card')];
+    this.matchElements = rowHits.length > 0 ? rowHits : jpHits;
+
+    this.matchCountEl.classList.remove('hidden');
+    this.matchPrevBtn.classList.remove('hidden');
+    this.matchNextBtn.classList.remove('hidden');
+
+    if (this.matchElements.length === 0) {
+      this.matchIndex = -1;
+      this.matchCountEl.textContent = '0 / 0';
+      return;
+    }
+
+    if (jumpToFirst || this.matchIndex < 0 || this.matchIndex >= this.matchElements.length) {
+      this.matchIndex = 0;
+    }
+    this._highlightCurrentTreeMatch(jumpToFirst);
+  }
+
+  stepMatch(delta) {
+    if (this.matchElements.length === 0) return;
+    this.matchIndex = (this.matchIndex + delta + this.matchElements.length) % this.matchElements.length;
+    this._highlightCurrentTreeMatch(true);
+  }
+
+  _highlightCurrentTreeMatch(scrollIntoView = true) {
+    this.treeScroll.querySelectorAll('.is-current-match').forEach((el) => el.classList.remove('is-current-match'));
+    const target = this.matchElements[this.matchIndex];
+    if (!target) return;
+
+    target.classList.add('is-current-match');
+    this.matchCountEl.textContent = `${this.matchIndex + 1} / ${this.matchElements.length}`;
+
+    if (scrollIntoView) {
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+
+    const segAttr = target.getAttribute('data-segments');
+    if (segAttr) {
+      try {
+        this.selectSegments(JSON.parse(segAttr));
+      } catch {
+        // ignore
+      }
     }
   }
 

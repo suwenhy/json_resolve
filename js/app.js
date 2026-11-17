@@ -25,6 +25,7 @@ import { JsonDiffView } from './ui/diffView.js';
 
 const STORAGE_TABS_KEY = 'jsonlens_workspace_v1';
 const STORAGE_THEME_KEY = 'jsonlens_theme_v1';
+const STORAGE_FONTSIZE_KEY = 'jsonlens_fontsize_v1';
 
 class JsonLensApp {
   constructor() {
@@ -32,6 +33,7 @@ class JsonLensApp {
     this.activeTabId = '';
     this.activeView = 'tree'; // 'tree' | 'graph' | 'table' | 'codegen' | 'diff'
     this.indentSetting = 2; // 2 | 4 | '\t'
+    this.fontSize = 13;
     this.leftCollapsed = false;
     this.parseResult = { ok: true, empty: true, value: undefined, error: null };
     this.cmdPaletteIdx = 0;
@@ -40,6 +42,7 @@ class JsonLensApp {
     this._initTheme();
     this._loadWorkspace();
     this._initComponents();
+    this._initFontSize();
     this._bindGlobalEvents();
     this._renderTabs();
     this._activateCurrentTab();
@@ -60,6 +63,29 @@ class JsonLensApp {
       this.graphView.renderGraph(false);
     }
     this.toast(next === 'dark' ? '已切换至深色主题' : '已切换至浅色主题');
+  }
+
+  _initFontSize() {
+    const saved = parseInt(localStorage.getItem(STORAGE_FONTSIZE_KEY) || '13', 10);
+    const initial = Number.isFinite(saved) ? Math.min(22, Math.max(11, saved)) : 13;
+    this.setFontSize(initial, false);
+  }
+
+  setFontSize(size, notify = true) {
+    const clamped = Math.min(22, Math.max(11, size));
+    this.fontSize = clamped;
+    const lineHeight = Math.round(clamped * 1.68);
+    const root = document.documentElement;
+    root.style.setProperty('--editor-font-size', `${clamped}px`);
+    root.style.setProperty('--editor-line-height', `${lineHeight}px`);
+    root.style.setProperty('--tree-font-size', `${Math.max(11, clamped - 0.5)}px`);
+    root.style.setProperty('--code-font-size', `${Math.max(11, clamped - 0.5)}px`);
+
+    const label = document.getElementById('font-size-label');
+    if (label) label.textContent = `${clamped}px`;
+    if (this.editor) this.editor.setFontSize(clamped, lineHeight);
+    localStorage.setItem(STORAGE_FONTSIZE_KEY, String(clamped));
+    if (notify) this.toast(`字体大小已调整为 ${clamped}px`);
   }
 
   _loadWorkspace() {
@@ -263,6 +289,9 @@ class JsonLensApp {
     });
 
     document.getElementById('btn-download-json').addEventListener('click', () => this.downloadJsonFile());
+    document.getElementById('btn-font-dec').addEventListener('click', () => this.setFontSize(this.fontSize - 1));
+    document.getElementById('btn-font-inc').addEventListener('click', () => this.setFontSize(this.fontSize + 1));
+    document.getElementById('font-size-label').addEventListener('click', () => this.setFontSize(13));
     document.getElementById('btn-theme-toggle').addEventListener('click', () => this.toggleTheme());
     document.getElementById('btn-cmd-palette').addEventListener('click', () => this.openCommandPalette());
     document.getElementById('btn-help-modal').addEventListener('click', () => this.toggleShortcutsModal(true));
@@ -706,6 +735,10 @@ class JsonLensApp {
       { title: '切换至：类型与格式生成 (TS / Go / Python / Java / Rust / YAML)', hint: '代码生成', run: () => this.switchView('codegen') },
       { title: '切换至：语义级 JSON 差异对比 (Structural Diff)', hint: '忽略键名顺序', run: () => this.switchView('diff') },
       { title: '切换深色 / 浅色主题', hint: 'Dark / Light', run: () => this.toggleTheme() },
+      { title: '增大编辑器字体 (A+)', hint: 'Font Size +', run: () => this.setFontSize(this.fontSize + 1) },
+      { title: '减小编辑器字体 (A−)', hint: 'Font Size -', run: () => this.setFontSize(this.fontSize - 1) },
+      { title: '重置编辑器字体为默认 13px', hint: 'Reset Font', run: () => this.setFontSize(13) },
+      { title: '在编辑器中查找并定位 (Find)', hint: '⌘/Ctrl + F', run: () => this.editor.openFind() },
       { title: '新建空白标签页', hint: '多文档工作区', run: () => this.createNewTab() },
       { title: '载入示例：非标准/损坏的日志 JSON', hint: '演示一键修复', run: () => this.createNewTab(SAMPLES[1].title, SAMPLES[1].content) },
       { title: '下载当前 JSON 文件', hint: '.json', run: () => this.downloadJsonFile() },

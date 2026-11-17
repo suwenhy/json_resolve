@@ -252,6 +252,50 @@
   border: 1px solid var(--border-subtle);
 }
 
+.font-size-stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  overflow: hidden;
+}
+
+.font-step-btn {
+  height: 100%;
+  padding: 0 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.font-step-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.font-size-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  padding: 0 5px;
+  min-width: 34px;
+  text-align: center;
+  border-left: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+  cursor: pointer;
+  user-select: none;
+  line-height: 26px;
+}
+.font-size-val:hover {
+  color: var(--accent-bright);
+}
+
 .select-sm {
   height: 28px;
   padding: 0 8px;

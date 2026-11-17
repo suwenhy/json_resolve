@@ -21,8 +21,11 @@ export class JsonCodeEditor {
     this.errorLine = null;
     this.activeLine = 1;
     this.lastLineCount = 0;
+    this.fontSize = 13;
+    this.lineHeight = 22;
     this.searchMatches = [];
     this.searchIdx = -1;
+    this.caseSensitive = false;
 
     this._renderShell();
     this._bindEvents();
@@ -32,10 +35,11 @@ export class JsonCodeEditor {
     this.container.innerHTML = `
       <div class="editor-find-bar hidden" data-role="find-bar">
         <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="text" class="editor-find-input" data-role="find-input" placeholder="在编辑器中查找文本..." autocomplete="off" spellcheck="false" />
+        <input type="text" class="editor-find-input" data-role="find-input" placeholder="查找内容 (Enter 下一个 / Shift+Enter 上一个)..." autocomplete="off" spellcheck="false" />
+        <button type="button" class="icon-btn-xs find-opt-btn" data-role="find-case" title="区分大小写">Aa</button>
         <span class="editor-find-count" data-role="find-count">0 / 0</span>
-        <button type="button" class="icon-btn-xs" data-role="find-prev" title="上一个 (Shift+Enter)">↑</button>
-        <button type="button" class="icon-btn-xs" data-role="find-next" title="下一个 (Enter)">↓</button>
+        <button type="button" class="icon-btn-xs" data-role="find-prev" title="上一个匹配项 (Shift+Enter)">↑</button>
+        <button type="button" class="icon-btn-xs" data-role="find-next" title="下一个匹配项 (Enter)">↓</button>
         <button type="button" class="icon-btn-xs" data-role="find-close" title="关闭 (Esc)">✕</button>
       </div>
       <div class="editor-body">
@@ -63,6 +67,7 @@ export class JsonCodeEditor {
 
     this.findBar = this.container.querySelector('[data-role="find-bar"]');
     this.findInput = this.container.querySelector('[data-role="find-input"]');
+    this.findCaseBtn = this.container.querySelector('[data-role="find-case"]');
     this.findCountEl = this.container.querySelector('[data-role="find-count"]');
     this.gutterInner = this.container.querySelector('[data-role="gutter-inner"]');
     this.activeLineEl = this.container.querySelector('[data-role="active-line"]');
@@ -96,13 +101,19 @@ export class JsonCodeEditor {
     // Find bar controls
     this.findInput.addEventListener('input', () => this._computeSearch(true));
     this.findInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' || e.key === 'F3') {
         e.preventDefault();
         this.stepSearch(e.shiftKey ? -1 : 1);
       } else if (e.key === 'Escape') {
         e.preventDefault();
         this.closeFind();
       }
+    });
+
+    this.findCaseBtn.addEventListener('click', () => {
+      this.caseSensitive = !this.caseSensitive;
+      this.findCaseBtn.classList.toggle('is-active', this.caseSensitive);
+      this._computeSearch(true);
     });
 
     this.container.querySelector('[data-role="find-prev"]').addEventListener('click', () => this.stepSearch(-1));
@@ -115,6 +126,13 @@ export class JsonCodeEditor {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
       e.preventDefault();
       this.openFind();
+      return;
+    }
+
+    // F3 / Shift+F3 => step search
+    if (e.key === 'F3' && !this.findBar.classList.contains('hidden')) {
+      e.preventDefault();
+      this.stepSearch(e.shiftKey ? -1 : 1);
       return;
     }
 
@@ -200,6 +218,9 @@ export class JsonCodeEditor {
 
   closeFind() {
     this.findBar.classList.add('hidden');
+    this.searchMatches = [];
+    this.searchIdx = -1;
+    this._syncHighlight();
     this.textarea.focus();
   }
 
@@ -209,10 +230,12 @@ export class JsonCodeEditor {
     this.searchIdx = -1;
     if (!q) {
       this.findCountEl.textContent = '0 / 0';
+      this._syncHighlight();
       return;
     }
-    const hay = this.textarea.value.toLowerCase();
-    const needle = q.toLowerCase();
+    const raw = this.textarea.value;
+    const hay = this.caseSensitive ? raw : raw.toLowerCase();
+    const needle = this.caseSensitive ? q : q.toLowerCase();
     let idx = 0;
     while (idx <= hay.length - needle.length) {
       const found = hay.indexOf(needle, idx);
@@ -224,10 +247,12 @@ export class JsonCodeEditor {
 
     if (this.searchMatches.length === 0) {
       this.findCountEl.textContent = '无匹配';
+      this._syncHighlight();
       return;
     }
     this.searchIdx = 0;
     this.findCountEl.textContent = `1 / ${this.searchMatches.length}`;
+    this._syncHighlight();
     if (jumpFirst) this._revealMatch(this.searchMatches[0], false);
   }
 
@@ -235,6 +260,7 @@ export class JsonCodeEditor {
     if (this.searchMatches.length === 0) return;
     this.searchIdx = (this.searchIdx + delta + this.searchMatches.length) % this.searchMatches.length;
     this.findCountEl.textContent = `${this.searchIdx + 1} / ${this.searchMatches.length}`;
+    this._syncHighlight();
     this._revealMatch(this.searchMatches[this.searchIdx], false);
   }
 
@@ -242,8 +268,30 @@ export class JsonCodeEditor {
     if (focusTextarea) this.textarea.focus();
     this.textarea.setSelectionRange(match.start, match.end);
     const loc = offsetToLineCol(this.textarea.value, match.start);
-    this.scrollToLine(loc.line, false);
+
+    // Center matched line vertically in viewport
+    const ta = this.textarea;
+    const padTop = 12;
+    const lineTop = padTop + (loc.line - 1) * this.lineHeight;
+    const targetTop = Math.max(0, lineTop - Math.max(0, ta.clientHeight / 2 - this.lineHeight / 2));
+    ta.scrollTop = targetTop;
+
+    // Ensure matched column is visible horizontally (important for minified / long lines)
+    const charW = this.fontSize * 0.602;
+    const targetX = Math.max(0, (loc.column - 1) * charW);
+    const viewW = ta.clientWidth - 48;
+    if (targetX < ta.scrollLeft + 24 || targetX > ta.scrollLeft + viewW) {
+      ta.scrollLeft = Math.max(0, targetX - viewW / 2);
+    }
+
+    this._syncScroll();
     this._updateCursor();
+  }
+
+  setFontSize(fontSize, lineHeight) {
+    this.fontSize = fontSize;
+    this.lineHeight = lineHeight;
+    this._renderLineBars();
   }
 
   getValue() {
@@ -267,7 +315,7 @@ export class JsonCodeEditor {
   }
 
   scrollToLine(lineNumber, focus = true) {
-    const lineHeight = 22;
+    const lineHeight = this.lineHeight;
     const targetTop = Math.max(0, (lineNumber - 4) * lineHeight);
     this.textarea.scrollTop = targetTop;
     this._syncScroll();
@@ -302,7 +350,7 @@ export class JsonCodeEditor {
   }
 
   _renderLineBars() {
-    const lineHeight = 22;
+    const lineHeight = this.lineHeight;
     const padTop = 12;
     const scrollTop = this.textarea.scrollTop;
 
@@ -323,11 +371,11 @@ export class JsonCodeEditor {
     // Trailing newline space guarantees last empty line scrolls identically to textarea
     const displayVal = val.endsWith('\n') ? val + ' ' : val;
 
-    if (val.length > MAX_HIGHLIGHT_CHARS) {
-      this.highlightCode.innerHTML = escapeHtml(displayVal);
-    } else {
-      this.highlightCode.innerHTML = highlightJson(displayVal);
+    let html = val.length > MAX_HIGHLIGHT_CHARS ? escapeHtml(displayVal) : highlightJson(displayVal);
+    if (this.searchMatches.length > 0 && !this.findBar.classList.contains('hidden')) {
+      html = this._injectSearchMarks(html, this.searchMatches, this.searchIdx);
     }
+    this.highlightCode.innerHTML = html;
 
     const lineCount = val ? val.split('\n').length : 1;
     if (lineCount !== this.lastLineCount) {
@@ -342,6 +390,62 @@ export class JsonCodeEditor {
       this._updateGutterMarkers();
     }
     this._renderLineBars();
+  }
+
+  _injectSearchMarks(html, matches, activeIdx) {
+    let out = '';
+    let mIdx = 0;
+    let curMatch = matches[0];
+    let inMark = false;
+    let plainPos = 0;
+    let i = 0;
+    const len = html.length;
+
+    const openTag = (idx) => `<mark class="editor-find-hit${idx === activeIdx ? ' is-current' : ''}">`;
+
+    while (i < len) {
+      if (html[i] === '<') {
+        const closeBracket = html.indexOf('>', i);
+        if (closeBracket !== -1) {
+          if (inMark) out += '</mark>';
+          out += html.slice(i, closeBracket + 1);
+          if (inMark) out += openTag(mIdx);
+          i = closeBracket + 1;
+          continue;
+        }
+      }
+
+      if (curMatch && plainPos === curMatch.start && !inMark) {
+        out += openTag(mIdx);
+        inMark = true;
+      }
+
+      let tokenStr;
+      if (html[i] === '&') {
+        const semi = html.indexOf(';', i);
+        if (semi !== -1 && semi - i <= 6) {
+          tokenStr = html.slice(i, semi + 1);
+          i = semi + 1;
+        } else {
+          tokenStr = html[i++];
+        }
+      } else {
+        tokenStr = html[i++];
+      }
+
+      out += tokenStr;
+      plainPos++;
+
+      if (inMark && curMatch && plainPos >= curMatch.end) {
+        out += '</mark>';
+        inMark = false;
+        mIdx++;
+        curMatch = mIdx < matches.length ? matches[mIdx] : null;
+      }
+    }
+
+    if (inMark) out += '</mark>';
+    return out;
   }
 
   _updateGutterMarkers() {
