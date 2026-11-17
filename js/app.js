@@ -16,8 +16,8 @@ import {
 } from './core/repair.js';
 import { setValueAtPath } from './core/query.js';
 import { SAMPLES } from './samples.js';
-import { JsonCodeEditor } from './ui/editor.js?v=20261117';
-import { JsonTreeView } from './ui/treeView.js?v=20261117';
+import { JsonCodeEditor } from './ui/editor.js?v=20261117-2';
+import { JsonTreeView } from './ui/treeView.js?v=20261117-2';
 import { JsonGraphView } from './ui/graphView.js';
 import { JsonTableView } from './ui/tableView.js';
 import { JsonCodegenView } from './ui/codegenView.js';

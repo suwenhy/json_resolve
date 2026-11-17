@@ -481,6 +481,16 @@ export class JsonTreeView {
     return escaped.replace(new RegExp(`(${safeNeedle})`, 'gi'), '<mark class="search-mark">$1</mark>');
   }
 
+  _renderIndentGuides(depth) {
+    if (depth <= 0) return '';
+    let html = '';
+    for (let d = 0; d < depth; d++) {
+      const left = d * 18 + 9;
+      html += `<span class="tree-guide-line guide-depth-${d % 6}" style="left:${left}px"></span>`;
+    }
+    return html;
+  }
+
   _buildNodeHtml(val, key, segments, depth, isLast, needle, matchAllowed, out) {
     const { jsonPath } = formatPath(segments);
     if (needle && this.filterOnlyMatches && matchAllowed && !matchAllowed.has(jsonPath)) {
@@ -490,13 +500,15 @@ export class JsonTreeView {
     const segAttr = escapeHtml(JSON.stringify(segments));
     const isSelected = jsonPath === this.selectedPathKey;
     const indentPx = depth * 18;
+    const dMod = depth % 6;
+    const guidesHtml = this._renderIndentGuides(depth);
 
     const keyHtml =
       key === null
         ? `<span class="tree-root-tag">root</span>`
         : typeof key === 'number'
-        ? `<span class="tree-idx">[${key}]</span>`
-        : `<span class="tree-key">"${this._highlightTextMatch(String(key), needle)}"</span><span class="tok-punct">: </span>`;
+        ? `<span class="tree-idx depth-fg-${dMod}">[${key}]</span>`
+        : `<span class="tree-key depth-fg-${dMod}">"${this._highlightTextMatch(String(key), needle)}"</span><span class="tok-punct">: </span>`;
 
     // Branch node: Object or Array
     if (val !== null && typeof val === 'object') {
@@ -510,7 +522,7 @@ export class JsonTreeView {
       if (count === 0) {
         out.push(`
           <div class="tree-row ${isSelected ? 'is-selected' : ''}" data-path-key="${escapeHtml(jsonPath)}" data-segments="${segAttr}" style="padding-left:${indentPx + 20}px">
-            ${keyHtml}<span class="tok-punct">${openSym}${closeSym}</span>
+            ${guidesHtml}${keyHtml}<span class="tok-brace tok-brace-${dMod}">${openSym}${closeSym}</span>
             <span class="tree-meta">空${isArr ? '数组' : '对象'}</span>
             ${this._renderHoverActions(false)}
           </div>
@@ -520,10 +532,10 @@ export class JsonTreeView {
 
       out.push(`
         <div class="tree-row is-branch ${isSelected ? 'is-selected' : ''}" data-path-key="${escapeHtml(jsonPath)}" data-segments="${segAttr}" style="padding-left:${indentPx}px">
-          <button type="button" class="tree-caret ${isCollapsed ? 'is-collapsed' : ''}" data-toggle-key="${escapeHtml(jsonPath)}" aria-label="展开或折叠">▾</button>
-          ${keyHtml}<span class="tok-punct">${openSym}</span>
-          <span class="tree-badge">${isArr ? `${count} items` : `${count} keys`}</span>
-          ${isCollapsed ? `<span class="tok-punct">… ${closeSym}${isLast ? '' : ','}</span>` : ''}
+          ${guidesHtml}<button type="button" class="tree-caret ${isCollapsed ? 'is-collapsed' : ''}" data-toggle-key="${escapeHtml(jsonPath)}" aria-label="展开或折叠">▾</button>
+          ${keyHtml}<span class="tok-brace tok-brace-${dMod}">${openSym}</span>
+          <span class="tree-badge depth-badge-${dMod}">${isArr ? `${count} items` : `${count} keys`}</span>
+          ${isCollapsed ? `<span class="tok-brace tok-brace-${dMod}">… ${closeSym}</span><span class="tok-punct">${isLast ? '' : ','}</span>` : ''}
           ${this._renderHoverActions(false)}
         </div>
       `);
@@ -564,7 +576,7 @@ export class JsonTreeView {
 
         out.push(`
           <div class="tree-close-row" style="padding-left:${indentPx + 20}px">
-            <span class="tok-punct">${closeSym}${isLast ? '' : ','}</span>
+            ${guidesHtml}<span class="tok-brace tok-brace-${dMod}">${closeSym}</span><span class="tok-punct">${isLast ? '' : ','}</span>
           </div>
         `);
       }
@@ -575,7 +587,7 @@ export class JsonTreeView {
     const { valueHtml, inlineTag, canUnpack } = this._formatLeafValue(val, needle);
     out.push(`
       <div class="tree-row ${isSelected ? 'is-selected' : ''}" data-path-key="${escapeHtml(jsonPath)}" data-segments="${segAttr}" style="padding-left:${indentPx + 20}px">
-        ${keyHtml}${valueHtml}<span class="tok-punct">${isLast ? '' : ','}</span>
+        ${guidesHtml}${keyHtml}${valueHtml}<span class="tok-punct">${isLast ? '' : ','}</span>
         ${inlineTag}
         ${this._renderHoverActions(canUnpack)}
       </div>

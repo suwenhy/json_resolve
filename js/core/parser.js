@@ -472,6 +472,7 @@ export function highlightJson(code) {
 
   let result = '';
   let lastIndex = 0;
+  let braceDepth = 0;
   let match;
 
   while ((match = tokenRegex.exec(code)) !== null) {
@@ -481,7 +482,8 @@ export function highlightJson(code) {
     const [, strLit, colonPart, kwLit, numLit, commentLit, punctLit] = match;
     if (strLit !== undefined) {
       if (colonPart !== undefined) {
-        result += `<span class="tok-key">${escapeHtml(strLit)}</span><span class="tok-punct">${escapeHtml(colonPart)}</span>`;
+        const keyDepth = Math.max(0, braceDepth - 1) % 6;
+        result += `<span class="tok-key tok-depth-${keyDepth}">${escapeHtml(strLit)}</span><span class="tok-punct">${escapeHtml(colonPart)}</span>`;
       } else {
         result += `<span class="tok-str">${escapeHtml(strLit)}</span>`;
       }
@@ -493,7 +495,15 @@ export function highlightJson(code) {
     } else if (commentLit !== undefined) {
       result += `<span class="tok-comment">${escapeHtml(commentLit)}</span>`;
     } else if (punctLit !== undefined) {
-      result += `<span class="tok-punct">${escapeHtml(punctLit)}</span>`;
+      if (punctLit === '{' || punctLit === '[') {
+        result += `<span class="tok-brace tok-brace-${braceDepth % 6}">${punctLit}</span>`;
+        braceDepth++;
+      } else if (punctLit === '}' || punctLit === ']') {
+        braceDepth = Math.max(0, braceDepth - 1);
+        result += `<span class="tok-brace tok-brace-${braceDepth % 6}">${punctLit}</span>`;
+      } else {
+        result += `<span class="tok-punct">${escapeHtml(punctLit)}</span>`;
+      }
     }
     lastIndex = tokenRegex.lastIndex;
   }

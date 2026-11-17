@@ -473,11 +473,12 @@ export class JsonGraphView {
       : '';
 
     return `
-      <g class="g-node g-kind-${n.kind} ${isSelected ? 'is-selected' : ''}" data-node-id="${escapeHtml(n.id)}" transform="translate(${n.x}, ${n.y})">
+      <g class="g-node g-kind-${n.kind} g-depth-${n.depth % 6} ${isSelected ? 'is-selected' : ''}" data-node-id="${escapeHtml(n.id)}" transform="translate(${n.x}, ${n.y})">
         <rect class="g-card-bg" width="${n.width}" height="${n.height}" rx="8" />
         <path class="g-card-head" d="M 0 8 A 8 8 0 0 1 8 0 L ${n.width - 8} 0 A 8 8 0 0 1 ${n.width} 8 L ${n.width} ${HEADER_H} L 0 ${HEADER_H} Z" />
-        <text x="12" y="19" class="g-title">${escapeHtml(truncStr(n.title, 22))}</text>
-        <text x="${n.hasChildren ? n.width - 36 : n.width - 12}" y="19" text-anchor="end" class="g-kind-tag">${badgeText}</text>
+        <rect class="g-depth-bar" x="0" y="0" width="${n.width}" height="3" rx="1.5" />
+        <text x="12" y="20" class="g-title">${escapeHtml(truncStr(n.title, 22))}</text>
+        <text x="${n.hasChildren ? n.width - 36 : n.width - 12}" y="20" text-anchor="end" class="g-kind-tag">${badgeText}</text>
         ${collapseControl}
         ${rowsSvg}
       </g>

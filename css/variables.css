@@ -51,6 +51,14 @@
   --editor-error-line: rgba(244, 63, 94, 0.18);
   --editor-selection: rgba(99, 102, 241, 0.32);
 
+  /* Multi-Level Hierarchy Palette (6 levels cycling) */
+  --depth-0: #818cf8; /* Indigo */
+  --depth-1: #38bdf8; /* Sky */
+  --depth-2: #34d399; /* Emerald */
+  --depth-3: #fbbf24; /* Amber */
+  --depth-4: #c084fc; /* Purple */
+  --depth-5: #fb7185; /* Rose */
+
   --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.55);
   --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.32);
 }
@@ -104,6 +112,14 @@
   --editor-active-line: rgba(79, 70, 229, 0.06);
   --editor-error-line: rgba(225, 29, 72, 0.13);
   --editor-selection: rgba(79, 70, 229, 0.2);
+
+  /* Multi-Level Hierarchy Palette (Light high contrast) */
+  --depth-0: #4f46e5; /* Indigo */
+  --depth-1: #0284c7; /* Sky */
+  --depth-2: #059669; /* Emerald */
+  --depth-3: #d97706; /* Amber */
+  --depth-4: #9333ea; /* Purple */
+  --depth-5: #e11d48; /* Rose */
 
   --shadow-lg: 0 18px 42px rgba(15, 23, 42, 0.14);
   --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.08);
