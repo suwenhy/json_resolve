@@ -4,7 +4,7 @@
  * Command Palette (Cmd/Ctrl+K), Drag & Drop File Import, Theme, and Local Persistence.
  */
 
-import { parseJsonSafe, analyzeJsonStats, escapeHtml } from './core/parser.js?v=20261117-3';
+import { parseJsonSafe, analyzeJsonStats, escapeHtml } from './core/parser.js?v=20261117-4';
 import {
   repairJson,
   formatJsonText,
@@ -16,9 +16,9 @@ import {
 } from './core/repair.js';
 import { setValueAtPath } from './core/query.js';
 import { SAMPLES } from './samples.js';
-import { JsonCodeEditor } from './ui/editor.js?v=20261117-3';
-import { JsonTreeView } from './ui/treeView.js?v=20261117-3';
-import { JsonGraphView } from './ui/graphView.js?v=20261117-3';
+import { JsonCodeEditor } from './ui/editor.js?v=20261117-4';
+import { JsonTreeView } from './ui/treeView.js?v=20261117-4';
+import { JsonGraphView } from './ui/graphView.js?v=20261117-4';
 import { JsonTableView } from './ui/tableView.js';
 import { JsonCodegenView } from './ui/codegenView.js';
 import { JsonDiffView } from './ui/diffView.js';

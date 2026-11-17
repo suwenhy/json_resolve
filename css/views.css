@@ -11,19 +11,19 @@
 
 /* Multi-Level Hierarchy Coloring (Rainbow Brackets, Keys, Guides & Graph Nodes) */
 .tok-brace { font-weight: 600; }
-.tok-brace-0, .depth-fg-0 { color: var(--depth-0); }
-.tok-brace-1, .depth-fg-1 { color: var(--depth-1); }
-.tok-brace-2, .depth-fg-2 { color: var(--depth-2); }
-.tok-brace-3, .depth-fg-3 { color: var(--depth-3); }
-.tok-brace-4, .depth-fg-4 { color: var(--depth-4); }
-.tok-brace-5, .depth-fg-5 { color: var(--depth-5); }
+.tok-brace-0, .depth-fg-0, .tree-key.depth-fg-0, .tree-idx.depth-fg-0 { color: var(--depth-0); }
+.tok-brace-1, .depth-fg-1, .tree-key.depth-fg-1, .tree-idx.depth-fg-1 { color: var(--depth-1); }
+.tok-brace-2, .depth-fg-2, .tree-key.depth-fg-2, .tree-idx.depth-fg-2 { color: var(--depth-2); }
+.tok-brace-3, .depth-fg-3, .tree-key.depth-fg-3, .tree-idx.depth-fg-3 { color: var(--depth-3); }
+.tok-brace-4, .depth-fg-4, .tree-key.depth-fg-4, .tree-idx.depth-fg-4 { color: var(--depth-4); }
+.tok-brace-5, .depth-fg-5, .tree-key.depth-fg-5, .tree-idx.depth-fg-5 { color: var(--depth-5); }
 
-.tok-depth-0 { color: var(--depth-0); }
-.tok-depth-1 { color: var(--depth-1); }
-.tok-depth-2 { color: var(--depth-2); }
-.tok-depth-3 { color: var(--depth-3); }
-.tok-depth-4 { color: var(--depth-4); }
-.tok-depth-5 { color: var(--depth-5); }
+.tok-depth-0, .tok-key.tok-depth-0 { color: var(--depth-0); }
+.tok-depth-1, .tok-key.tok-depth-1 { color: var(--depth-1); }
+.tok-depth-2, .tok-key.tok-depth-2 { color: var(--depth-2); }
+.tok-depth-3, .tok-key.tok-depth-3 { color: var(--depth-3); }
+.tok-depth-4, .tok-key.tok-depth-4 { color: var(--depth-4); }
+.tok-depth-5, .tok-key.tok-depth-5 { color: var(--depth-5); }
 
 .tree-guide-line {
   position: absolute;
@@ -40,12 +40,12 @@
 .guide-depth-4 { background: var(--depth-4); }
 .guide-depth-5 { background: var(--depth-5); }
 
-.depth-badge-0 { border-color: color-mix(in srgb, var(--depth-0) 45%, transparent); color: var(--depth-0); }
-.depth-badge-1 { border-color: color-mix(in srgb, var(--depth-1) 45%, transparent); color: var(--depth-1); }
-.depth-badge-2 { border-color: color-mix(in srgb, var(--depth-2) 45%, transparent); color: var(--depth-2); }
-.depth-badge-3 { border-color: color-mix(in srgb, var(--depth-3) 45%, transparent); color: var(--depth-3); }
-.depth-badge-4 { border-color: color-mix(in srgb, var(--depth-4) 45%, transparent); color: var(--depth-4); }
-.depth-badge-5 { border-color: color-mix(in srgb, var(--depth-5) 45%, transparent); color: var(--depth-5); }
+.tree-badge.depth-badge-0 { border-color: color-mix(in srgb, var(--depth-0) 45%, transparent); color: var(--depth-0); }
+.tree-badge.depth-badge-1 { border-color: color-mix(in srgb, var(--depth-1) 45%, transparent); color: var(--depth-1); }
+.tree-badge.depth-badge-2 { border-color: color-mix(in srgb, var(--depth-2) 45%, transparent); color: var(--depth-2); }
+.tree-badge.depth-badge-3 { border-color: color-mix(in srgb, var(--depth-3) 45%, transparent); color: var(--depth-3); }
+.tree-badge.depth-badge-4 { border-color: color-mix(in srgb, var(--depth-4) 45%, transparent); color: var(--depth-4); }
+.tree-badge.depth-badge-5 { border-color: color-mix(in srgb, var(--depth-5) 45%, transparent); color: var(--depth-5); }
 
 .g-depth-0 .g-depth-bar { fill: var(--depth-0); }
 .g-depth-1 .g-depth-bar { fill: var(--depth-1); }
