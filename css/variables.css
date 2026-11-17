@@ -137,6 +137,43 @@
   --radius-lg: 12px;
 }
 
+/* Color Scheme Presets for Multi-Level Hierarchy */
+[data-color-scheme='ocean'] {
+  --depth-0: #38bdf8;
+  --depth-1: #2dd4bf;
+  --depth-2: #60a5fa;
+  --depth-3: #34d399;
+  --depth-4: #818cf8;
+  --depth-5: #22d3ee;
+}
+
+[data-color-scheme='sunset'] {
+  --depth-0: #fb7185;
+  --depth-1: #fb923c;
+  --depth-2: #fbbf24;
+  --depth-3: #f472b6;
+  --depth-4: #e879f9;
+  --depth-5: #f87171;
+}
+
+[data-color-scheme='vivid'] {
+  --depth-0: #3b82f6;
+  --depth-1: #10b981;
+  --depth-2: #f59e0b;
+  --depth-3: #ec4899;
+  --depth-4: #8b5cf6;
+  --depth-5: #06b6d4;
+}
+
+[data-color-scheme='mono'] {
+  --depth-0: var(--tok-key);
+  --depth-1: var(--tok-key);
+  --depth-2: var(--tok-key);
+  --depth-3: var(--tok-key);
+  --depth-4: var(--tok-key);
+  --depth-5: var(--tok-key);
+}
+
 *,
 *::before,
 *::after {

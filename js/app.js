@@ -4,7 +4,7 @@
  * Command Palette (Cmd/Ctrl+K), Drag & Drop File Import, Theme, and Local Persistence.
  */
 
-import { parseJsonSafe, analyzeJsonStats, escapeHtml } from './core/parser.js?v=20261117-4';
+import { parseJsonSafe, analyzeJsonStats, escapeHtml } from './core/parser.js?v=20261117-5';
 import {
   repairJson,
   formatJsonText,
@@ -16,9 +16,9 @@ import {
 } from './core/repair.js';
 import { setValueAtPath } from './core/query.js';
 import { SAMPLES } from './samples.js';
-import { JsonCodeEditor } from './ui/editor.js?v=20261117-4';
-import { JsonTreeView } from './ui/treeView.js?v=20261117-4';
-import { JsonGraphView } from './ui/graphView.js?v=20261117-4';
+import { JsonCodeEditor } from './ui/editor.js?v=20261117-5';
+import { JsonTreeView } from './ui/treeView.js?v=20261117-5';
+import { JsonGraphView } from './ui/graphView.js?v=20261117-5';
 import { JsonTableView } from './ui/tableView.js';
 import { JsonCodegenView } from './ui/codegenView.js';
 import { JsonDiffView } from './ui/diffView.js';
@@ -26,6 +26,8 @@ import { JsonDiffView } from './ui/diffView.js';
 const STORAGE_TABS_KEY = 'jsonlens_workspace_v1';
 const STORAGE_THEME_KEY = 'jsonlens_theme_v1';
 const STORAGE_FONTSIZE_KEY = 'jsonlens_fontsize_v1';
+const STORAGE_SCHEME_KEY = 'jsonlens_scheme_v1';
+const STORAGE_GUIDES_KEY = 'jsonlens_guides_v1';
 
 class JsonLensApp {
   constructor() {
@@ -34,6 +36,8 @@ class JsonLensApp {
     this.activeView = 'tree'; // 'tree' | 'graph' | 'table' | 'codegen' | 'diff'
     this.indentSetting = 2; // 2 | 4 | '\t'
     this.fontSize = 13;
+    this.colorScheme = 'rainbow';
+    this.showGuides = true;
     this.leftCollapsed = false;
     this.parseResult = { ok: true, empty: true, value: undefined, error: null };
     this.cmdPaletteIdx = 0;
@@ -43,6 +47,7 @@ class JsonLensApp {
     this._loadWorkspace();
     this._initComponents();
     this._initFontSize();
+    this._initAppearanceSettings();
     this._bindGlobalEvents();
     this._renderTabs();
     this._activateCurrentTab();
@@ -86,6 +91,47 @@ class JsonLensApp {
     if (this.editor) this.editor.setFontSize(clamped, lineHeight);
     localStorage.setItem(STORAGE_FONTSIZE_KEY, String(clamped));
     if (notify) this.toast(`字体大小已调整为 ${clamped}px`);
+  }
+
+  _initAppearanceSettings() {
+    const savedScheme = localStorage.getItem(STORAGE_SCHEME_KEY) || 'rainbow';
+    const savedGuides = localStorage.getItem(STORAGE_GUIDES_KEY);
+    this.setColorScheme(savedScheme, false);
+    this.setShowGuides(savedGuides !== 'off', false);
+  }
+
+  setColorScheme(scheme, notify = true) {
+    const allowed = ['rainbow', 'ocean', 'sunset', 'vivid', 'mono'];
+    const target = allowed.includes(scheme) ? scheme : 'rainbow';
+    this.colorScheme = target;
+    document.documentElement.setAttribute('data-color-scheme', target);
+    localStorage.setItem(STORAGE_SCHEME_KEY, target);
+
+    document.querySelectorAll('#scheme-grid [data-scheme]').forEach((card) => {
+      card.classList.toggle('is-active', card.getAttribute('data-scheme') === target);
+    });
+
+    if (notify) {
+      const names = {
+        rainbow: '经典彩虹',
+        ocean: '海洋极光',
+        sunset: '暖阳日落',
+        vivid: '高对比鲜明',
+        mono: '传统单色',
+      };
+      this.toast(`已切换颜色方案：${names[target]}`);
+    }
+  }
+
+  setShowGuides(show, notify = true) {
+    this.showGuides = Boolean(show);
+    document.documentElement.setAttribute('data-guides', this.showGuides ? 'on' : 'off');
+    localStorage.setItem(STORAGE_GUIDES_KEY, this.showGuides ? 'on' : 'off');
+    const toggle = document.getElementById('toggle-guides');
+    if (toggle) toggle.checked = this.showGuides;
+    if (notify) {
+      this.toast(this.showGuides ? '已开启树形层级参考线' : '已隐藏树形层级参考线');
+    }
   }
 
   _loadWorkspace() {
@@ -293,6 +339,15 @@ class JsonLensApp {
     document.getElementById('btn-font-inc').addEventListener('click', () => this.setFontSize(this.fontSize + 1));
     document.getElementById('font-size-label').addEventListener('click', () => this.setFontSize(13));
     document.getElementById('btn-theme-toggle').addEventListener('click', () => this.toggleTheme());
+    document.getElementById('btn-settings').addEventListener('click', () => this.toggleSettingsModal(true));
+    document.getElementById('btn-close-settings').addEventListener('click', () => this.toggleSettingsModal(false));
+    document.getElementById('scheme-grid').addEventListener('click', (e) => {
+      const card = e.target.closest('[data-scheme]');
+      if (card) this.setColorScheme(card.getAttribute('data-scheme'));
+    });
+    document.getElementById('toggle-guides').addEventListener('change', (e) => {
+      this.setShowGuides(e.target.checked);
+    });
     document.getElementById('btn-cmd-palette').addEventListener('click', () => this.openCommandPalette());
     document.getElementById('btn-help-modal').addEventListener('click', () => this.toggleShortcutsModal(true));
     document.getElementById('btn-close-help').addEventListener('click', () => this.toggleShortcutsModal(false));
@@ -346,6 +401,7 @@ class JsonLensApp {
       if (e.key === 'Escape') {
         this.closeCommandPalette();
         this.toggleShortcutsModal(false);
+        this.toggleSettingsModal(false);
       }
     });
   }
@@ -735,6 +791,8 @@ class JsonLensApp {
       { title: '切换至：类型与格式生成 (TS / Go / Python / Java / Rust / YAML)', hint: '代码生成', run: () => this.switchView('codegen') },
       { title: '切换至：语义级 JSON 差异对比 (Structural Diff)', hint: '忽略键名顺序', run: () => this.switchView('diff') },
       { title: '切换深色 / 浅色主题', hint: 'Dark / Light', run: () => this.toggleTheme() },
+      { title: '打开外观与层级显示设置 (颜色方案/参考线)', hint: 'Settings', run: () => this.toggleSettingsModal(true) },
+      { title: '显示 / 隐藏树形层级参考线', hint: 'Toggle Guides', run: () => this.setShowGuides(!this.showGuides) },
       { title: '增大编辑器字体 (A+)', hint: 'Font Size +', run: () => this.setFontSize(this.fontSize + 1) },
       { title: '减小编辑器字体 (A−)', hint: 'Font Size -', run: () => this.setFontSize(this.fontSize - 1) },
       { title: '重置编辑器字体为默认 13px', hint: 'Reset Font', run: () => this.setFontSize(13) },
@@ -836,6 +894,16 @@ class JsonLensApp {
     if (open) {
       modal.onclick = (e) => {
         if (e.target === modal) this.toggleShortcutsModal(false);
+      };
+    }
+  }
+
+  toggleSettingsModal(open) {
+    const modal = document.getElementById('settings-modal');
+    modal.classList.toggle('hidden', !open);
+    if (open) {
+      modal.onclick = (e) => {
+        if (e.target === modal) this.toggleSettingsModal(false);
       };
     }
   }

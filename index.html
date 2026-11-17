@@ -6,9 +6,9 @@
   <title>JSONLens — 现代在线 JSON 解析、可视化图谱与类型转换工作台</title>
   <meta name="description" content="100% 本地浏览器解析的现代 JSON 工作台：支持语法高亮、智能容错修复、JSON Crack 风格可视化图谱、JSONPath 查询、JWT/时间戳透视、语义 Diff 对比及 TS/Go/Python/Java/Rust 代码生成。" />
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-  <link rel="stylesheet" href="./css/variables.css?v=20261117-4" />
-  <link rel="stylesheet" href="./css/layout.css?v=20261117-4" />
-  <link rel="stylesheet" href="./css/views.css?v=20261117-4" />
+  <link rel="stylesheet" href="./css/variables.css?v=20261117-5" />
+  <link rel="stylesheet" href="./css/layout.css?v=20261117-5" />
+  <link rel="stylesheet" href="./css/views.css?v=20261117-5" />
 </head>
 <body>
   <div class="app-shell">
@@ -63,6 +63,11 @@
 
         <button id="btn-theme-toggle" type="button" class="btn-tool" title="切换深色 / 浅色外观">
           <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+
+        <button id="btn-settings" type="button" class="btn-tool" title="外观与层级显示设置">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>设置</span>
         </button>
 
         <button id="btn-help-modal" type="button" class="btn-tool" title="查看快捷键与功能指南">?</button>
@@ -223,6 +228,88 @@
     </div>
   </div>
 
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="外观与显示设置">
+    <div class="settings-dialog">
+      <div class="help-head">
+        <h3>外观与层级显示设置</h3>
+        <button id="btn-close-settings" type="button" class="icon-btn-xs">✕</button>
+      </div>
+
+      <div class="settings-section">
+        <span class="settings-label">层级颜色方案</span>
+        <div id="scheme-grid" class="scheme-grid">
+          <button type="button" class="scheme-card is-active" data-scheme="rainbow">
+            <span class="scheme-name">经典彩虹 (默认)</span>
+            <span class="scheme-swatches">
+              <span class="scheme-dot" style="background:#818cf8"></span>
+              <span class="scheme-dot" style="background:#38bdf8"></span>
+              <span class="scheme-dot" style="background:#34d399"></span>
+              <span class="scheme-dot" style="background:#fbbf24"></span>
+              <span class="scheme-dot" style="background:#c084fc"></span>
+              <span class="scheme-dot" style="background:#fb7185"></span>
+            </span>
+          </button>
+          <button type="button" class="scheme-card" data-scheme="ocean">
+            <span class="scheme-name">海洋极光</span>
+            <span class="scheme-swatches">
+              <span class="scheme-dot" style="background:#38bdf8"></span>
+              <span class="scheme-dot" style="background:#2dd4bf"></span>
+              <span class="scheme-dot" style="background:#60a5fa"></span>
+              <span class="scheme-dot" style="background:#34d399"></span>
+              <span class="scheme-dot" style="background:#818cf8"></span>
+              <span class="scheme-dot" style="background:#22d3ee"></span>
+            </span>
+          </button>
+          <button type="button" class="scheme-card" data-scheme="sunset">
+            <span class="scheme-name">暖阳日落</span>
+            <span class="scheme-swatches">
+              <span class="scheme-dot" style="background:#fb7185"></span>
+              <span class="scheme-dot" style="background:#fb923c"></span>
+              <span class="scheme-dot" style="background:#fbbf24"></span>
+              <span class="scheme-dot" style="background:#f472b6"></span>
+              <span class="scheme-dot" style="background:#e879f9"></span>
+              <span class="scheme-dot" style="background:#f87171"></span>
+            </span>
+          </button>
+          <button type="button" class="scheme-card" data-scheme="vivid">
+            <span class="scheme-name">高对比鲜明</span>
+            <span class="scheme-swatches">
+              <span class="scheme-dot" style="background:#3b82f6"></span>
+              <span class="scheme-dot" style="background:#10b981"></span>
+              <span class="scheme-dot" style="background:#f59e0b"></span>
+              <span class="scheme-dot" style="background:#ec4899"></span>
+              <span class="scheme-dot" style="background:#8b5cf6"></span>
+              <span class="scheme-dot" style="background:#06b6d4"></span>
+            </span>
+          </button>
+          <button type="button" class="scheme-card" data-scheme="mono">
+            <span class="scheme-name">传统单色 (不区分层级)</span>
+            <span class="scheme-swatches">
+              <span class="scheme-dot" style="background:#7dcfff"></span>
+              <span class="scheme-dot" style="background:#7dcfff"></span>
+              <span class="scheme-dot" style="background:#7dcfff"></span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <span class="settings-label">树形视图辅助线</span>
+        <label class="settings-row">
+          <div>
+            <div class="settings-row-title">显示层级参考线</div>
+            <div class="settings-row-desc">在右侧树形视图中展示不同颜色的垂直缩进引导线</div>
+          </div>
+          <span class="switch-toggle">
+            <input id="toggle-guides" type="checkbox" checked />
+            <span class="switch-slider"></span>
+          </span>
+        </label>
+      </div>
+    </div>
+  </div>
+
   <!-- Full-Window File Drag & Drop Overlay -->
   <div id="drop-overlay" class="drop-overlay hidden">
     <div class="drop-card">
@@ -235,6 +322,6 @@
   <!-- Toast Host -->
   <div id="toast-host" class="toast-host" aria-live="polite"></div>
 
-  <script type="module" src="./js/app.js?v=20261117-4"></script>
+  <script type="module" src="./js/app.js?v=20261117-5"></script>
 </body>
 </html>
